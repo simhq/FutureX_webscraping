@@ -32,8 +32,8 @@ def load_vector_store():
 # Create Chatbot with Memory
 @st.cache_resource
 def create_rag_chain(_vector_store):
-    llm = ChatOpenAI(model="gpt-4", temperature=0.5)  # Use ChatOpenAI instead of OpenAI
-    retriever = _vector_store.as_retriever(search_kwargs={"k": 3})  
+    llm = ChatOpenAI(model="gpt-4o", temperature=0.5)  # Use ChatOpenAI instead of OpenAI
+    retriever = _vector_store.as_retriever(search_kwargs={"k": 20})  
     memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
 
     return ConversationalRetrievalChain.from_llm(llm=llm, retriever=retriever, memory=memory)
