@@ -74,17 +74,17 @@ def main():
                     else:
                         st.markdown(f"**🤖 Bot:** {message}")
 
-                # Display Sources
-                st.subheader("📌 Sources:")
-                if sources:
-                    for i, doc in enumerate(sources):
-                        with st.expander(f"🔹 Source {i+1}"):
-                            if hasattr(doc, 'metadata') and 'source' in doc.metadata:
-                                st.markdown(f"[🔗 Source {i+1}]({doc.metadata['source']})")
-                            else:
-                                st.write(doc.page_content)
-                else:
-                    st.write("No sources found.")
+                # # Display Sources
+                # st.subheader("📌 Sources:")
+                # if sources:
+                #     for i, doc in enumerate(sources):
+                #         with st.expander(f"🔹 Source {i+1}"):
+                #             if hasattr(doc, 'metadata') and 'source' in doc.metadata:
+                #                 st.markdown(f"[🔗 Source {i+1}]({doc.metadata['source']})")
+                #             else:
+                #                 st.write(doc.page_content)
+                # else:
+                #     st.write("No sources found.")
             except Exception as e:
                 st.error(f"❌ Error: {str(e)}")
 
