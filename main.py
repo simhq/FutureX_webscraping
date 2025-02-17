@@ -10,8 +10,8 @@ from langchain.memory import ConversationBufferMemory
 # Load .env file
 load_dotenv()
 
-# Read API Key from environment
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+# Read API Key from .env or Streamlit secrets
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY") or st.secrets.get("OPENAI_API_KEY")
 
 if not OPENAI_API_KEY:
     st.error("⚠️ OpenAI API key not found! Please set it in the `.env` file.")
