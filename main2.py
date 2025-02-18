@@ -6,7 +6,7 @@ from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_openai import ChatOpenAI
 from langchain.chains import ConversationalRetrievalChain
 from langchain.memory import ConversationBufferMemory
-from urllib.parse import urlparse, urlunparse
+from urllib.parse import urlparse
 
 # Load .env file
 load_dotenv()
@@ -46,10 +46,6 @@ def create_rag_chain(_vector_store):
         output_key="answer"  # Explicitly set the output key
     )
 
-def normalize_url(url):
-    parsed_url = urlparse(url)
-    return urlunparse((parsed_url.scheme, parsed_url.netloc, parsed_url.path, '', '', ''))  # Ignore fragments
-
 # Streamlit UI
 def main():
     st.set_page_config(page_title="💬 AI-Powered RAG Chatbot", layout="wide")
@@ -76,48 +72,36 @@ def main():
                 answer = result.get("answer", "No answer found.")
                 sources = result.get("source_documents", [])
 
-                # Store chat history with sources
-                st.session_state["chat_history"].insert(0, {
-                    "role": "You",
-                    "message": query
-                })
-                st.session_state["chat_history"].insert(0, {
-                    "role": "Bot",
-                    "message": answer,
-                    "sources": sources  # Store sources with response
-                })
+                # Store chat history (latest first)
+                st.session_state["chat_history"] = [("You", query), ("Bot", answer)] + st.session_state["chat_history"]
                 st.session_state.pop("send_query", None)
 
+                # Display Chat History
+                for role, message in st.session_state["chat_history"]:
+                    if role == "You":
+                        st.markdown(f"**🧑‍💻 You:** {message}")
+                    else:
+                        st.markdown(f"**🤖 Bot:** {message}")
+
+                # Display Sources (Top 3 unique domains only)
+                st.subheader("📌 Sources:")
+                unique_domains = set()
+                displayed_sources = 0
+                if sources:
+                    for doc in sources:
+                        source_url = doc.metadata.get('source', 'Unknown source')
+                        domain = urlparse(source_url).netloc if source_url != 'Unknown source' else 'Unknown'
+                        if domain != 'Unknown' and domain not in unique_domains:
+                            unique_domains.add(domain)
+                            displayed_sources += 1
+                            with st.expander(f"🔹 Source {displayed_sources}"):
+                                st.write(f"**Source:** {source_url}")  # Ensure metadata access
+                            if displayed_sources == 5:
+                                break  # Limit to top 5 unique sources
+                else:
+                    st.write("No sources found.")
             except Exception as e:
                 st.error(f"❌ Error: {str(e)}")
-
-    # Display Chat History with Sources
-    for entry in st.session_state["chat_history"]:
-        role = entry["role"]
-        message = entry["message"]
-        if role == "You":
-            st.markdown(f"**🧑‍💻 You:** {message}")
-        else:
-            st.markdown(f"**🤖 Bot:** {message}")
-
-            # Display sources for this response
-            sources = entry.get("sources", [])
-            if sources:
-                st.subheader("📌 Sources for this response:")
-                displayed_sources = 0
-                unique_sources = set()
-                for doc in sources:
-                    source_url = doc.metadata.get('source', 'Unknown source')
-                    normalized_source = normalize_url(source_url)
-                    if normalized_source != 'Unknown' and normalized_source not in unique_sources:
-                        unique_sources.add(normalized_source)
-                        displayed_sources += 1
-                        with st.expander(f"🔹 Source {displayed_sources}"):
-                            st.write(f"**Source:** {source_url}")  
-                        if displayed_sources == 5:
-                            break  # Limit to top 5 unique sources
-            else:
-                st.write("_No sources found for this response._")
 
 if __name__ == "__main__":
     main()
