@@ -1,12 +1,13 @@
 import os
 import streamlit as st
-from dotenv import load_dotenv  # Load environment variables
+from dotenv import load_dotenv
 from langchain_community.vectorstores import FAISS
 from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_openai import ChatOpenAI
 from langchain.chains import ConversationalRetrievalChain
 from langchain.memory import ConversationBufferMemory
-from urllib.parse import urlparse
+from langchain.schema import HumanMessage, AIMessage, SystemMessage
+from urllib.parse import urlparse, urlunparse
 
 # Load .env file
 load_dotenv()
@@ -22,7 +23,6 @@ os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
 
 VECTOR_STORE_PATH = "vector_store.faiss"
 
-# Cache Vector Store
 @st.cache_resource
 def load_vector_store():
     embeddings = OpenAIEmbeddings()
@@ -31,77 +31,109 @@ def load_vector_store():
         return vector_store
     return None
 
-# Create Chatbot with Memory
 @st.cache_resource
 def create_rag_chain(_vector_store):
     llm = ChatOpenAI(model="gpt-4o", temperature=0.5)
-    retriever = _vector_store.as_retriever(search_kwargs={"k": 20})  # Lowered k to reduce irrelevant sources
+    retriever = _vector_store.as_retriever(search_kwargs={"k": 20})
     memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True, output_key="answer")
-    
+
+    system_message = SystemMessage(content=(
+        "Compare the chatbot's answer against the content of retrieved documents. "
+        "Do not return information that is not found in the sources. Do not hallucinate. "
+        "If the answer is not found, tell the user that the answer is not found on the Corporate Website."
+    ))
+    memory.chat_memory.add_message(system_message)
+
     return ConversationalRetrievalChain.from_llm(
         llm=llm, 
         retriever=retriever, 
         memory=memory, 
-        return_source_documents=True,  # Ensure sources are returned
-        output_key="answer"  # Explicitly set the output key
+        return_source_documents=True,
+        output_key="answer"
     )
 
-# Streamlit UI
+def normalize_url(url):
+    parsed_url = urlparse(url)
+    return urlunparse((parsed_url.scheme, parsed_url.netloc, parsed_url.path, '', '', ''))
+
+def enhance_prompt(prompt):
+    llm = ChatOpenAI(model="gpt-4o", temperature=0.7)
+    enriched_prompt = llm.predict(f"In the context of Singapore Infocomm Media Development Authority, enrich this prompt for a more effective RAG search: {prompt}. Output only the prompt.")
+    return enriched_prompt
+
 def main():
-    st.set_page_config(page_title="💬 AI-Powered RAG Chatbot", layout="wide")
+    st.set_page_config(page_title="💬 Ask CODI 2.0", layout="wide")
 
     vector_store = load_vector_store()
     if not vector_store:
         st.warning("⚠️ No vector store found. Please ensure it is prepared before running the app!")
         return
-    
+
     rag_chain = create_rag_chain(vector_store)
 
-    st.title("💬 Chat with Your Website")
+    st.title("💬 Chat with CODI about Corporate Website")
 
     if "chat_history" not in st.session_state:
         st.session_state["chat_history"] = []
+    if "query" not in st.session_state:
+        st.session_state["query"] = ""
 
-    query = st.text_input("🔍 Ask something:", key="query", on_change=lambda: st.session_state.update({'send_query': True}))
-    
-    if st.session_state.get("send_query") and query.strip():
+    query = st.text_input("🔍 Ask something:", key="query")
+
+    if query.strip():
         with st.spinner("🔎 Searching..."):
             try:
-                result = rag_chain({"question": query, "chat_history": st.session_state["chat_history"]})
-                
-                answer = result.get("answer", "No answer found.")
+                enhanced_query = enhance_prompt(query)
+
+                chat_history = []
+                for entry in st.session_state["chat_history"]:
+                    if entry["role"] == "You":
+                        chat_history.append(HumanMessage(content=entry["message"]))
+                    else:
+                        chat_history.append(AIMessage(content=entry["answer"]))
+
+                result = rag_chain({"question": enhanced_query, "chat_history": chat_history})
+
+                answer = result.get("answer", "No answer found on the Corporate Website.")
                 sources = result.get("source_documents", [])
 
-                # Store chat history (latest first)
-                st.session_state["chat_history"] = [("You", query), ("Bot", answer)] + st.session_state["chat_history"]
-                st.session_state.pop("send_query", None)
+                if not sources:
+                    answer = "No answer found on the Corporate Website."
 
-                # Display Chat History
-                for role, message in st.session_state["chat_history"]:
-                    if role == "You":
-                        st.markdown(f"**🧑‍💻 You:** {message}")
-                    else:
-                        st.markdown(f"**🤖 Bot:** {message}")
-
-                # Display Sources (Top 3 unique domains only)
-                st.subheader("📌 Sources:")
-                unique_domains = set()
-                displayed_sources = 0
-                if sources:
-                    for doc in sources:
-                        source_url = doc.metadata.get('source', 'Unknown source')
-                        domain = urlparse(source_url).netloc if source_url != 'Unknown source' else 'Unknown'
-                        if domain != 'Unknown' and domain not in unique_domains:
-                            unique_domains.add(domain)
-                            displayed_sources += 1
-                            with st.expander(f"🔹 Source {displayed_sources}"):
-                                st.write(f"**Source:** {source_url}")  # Ensure metadata access
-                            if displayed_sources == 5:
-                                break  # Limit to top 5 unique sources
-                else:
-                    st.write("No sources found.")
+                st.session_state["chat_history"].insert(0, {
+                    "role": "You",
+                    "message": query,
+                    "answer": answer,
+                    "sources": sources
+                })
+                
             except Exception as e:
                 st.error(f"❌ Error: {str(e)}")
+
+    for entry in st.session_state["chat_history"]:
+        query = entry["message"]
+        answer = entry["answer"]
+        sources = entry.get("sources", [])
+
+        st.write(f"**🧑‍💻 You:** {query}")
+        st.write(f"**🤖 Bot:** {answer}")
+
+        if sources:
+            unique_sources = set()
+            displayed_sources = 0
+            for doc in sources:
+                source_url = doc.metadata.get('source', 'Unknown source')
+                normalized_source = normalize_url(source_url).lower()
+                if normalized_source != 'unknown' and normalized_source not in unique_sources:
+                    unique_sources.add(normalized_source)
+                    displayed_sources += 1
+                    st.write(f"**📌 Source {displayed_sources}:** {source_url}")
+                    if displayed_sources == 5:
+                        break
+        else:
+            st.write("_No sources found for this response._")
+
+        st.markdown("---")
 
 if __name__ == "__main__":
     main()
