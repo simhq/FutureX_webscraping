@@ -8,7 +8,6 @@ from langchain.chains import ConversationalRetrievalChain
 from langchain.memory import ConversationBufferMemory
 from langchain.schema import HumanMessage, AIMessage, SystemMessage
 from urllib.parse import urlparse, urlunparse
-import random
 
 # Load .env file
 load_dotenv()
@@ -62,23 +61,8 @@ def enhance_prompt(prompt):
     enriched_prompt = llm.predict(f"In the context of Singapore Infocomm Media Development Authority, enrich this prompt for a more effective RAG search: {prompt}. Output only the prompt.")
     return enriched_prompt
 
-def generate_follow_up_questions(answer):
-    llm = ChatOpenAI(model="gpt-4o", temperature=0.7)
-    prompt = (
-        f"Based on the following answer, suggest three follow-up questions that the user might ask. "
-        f"Ensure the questions are relevant and engaging.\nAnswer: {answer}\nFollow-up questions:"
-    )
-    response = llm.predict(prompt)
-    questions = response.split('\n')
-    return [q.strip('- ') for q in questions if q.strip()][:3]
-
 def main():
     st.set_page_config(page_title="💬 Ask CODI 2.0", layout="wide")
-
-    if "query_input" not in st.session_state:
-        st.session_state.query_input = ""
-    if "selected_question" not in st.session_state:
-        st.session_state.selected_question = ""
 
     vector_store = load_vector_store()
     if not vector_store:
@@ -91,14 +75,10 @@ def main():
 
     if "chat_history" not in st.session_state:
         st.session_state["chat_history"] = []
-    if "follow_up_questions" not in st.session_state:
-        st.session_state["follow_up_questions"] = []
-    
-    if st.session_state.selected_question:
-        st.session_state.query_input = st.session_state.selected_question
-        st.session_state.selected_question = ""  # Reset after applying
+    if "query" not in st.session_state:
+        st.session_state["query"] = ""
 
-    query = st.text_input("🔍 Ask something:", value=st.session_state.query_input, key="query_input")
+    query = st.text_input("🔍 Ask something:", key="query")
 
     if query.strip():
         with st.spinner("🔎 Searching..."):
@@ -120,17 +100,13 @@ def main():
                 if not sources:
                     answer = "No answer found on the Corporate Website."
 
-                follow_up_questions = generate_follow_up_questions(answer)
-
                 st.session_state["chat_history"].insert(0, {
                     "role": "You",
                     "message": query,
                     "answer": answer,
-                    "sources": sources,
-                    "follow_up_questions": follow_up_questions
+                    "sources": sources
                 })
-                st.session_state["follow_up_questions"] = follow_up_questions
-
+                
             except Exception as e:
                 st.error(f"❌ Error: {str(e)}")
 
@@ -138,19 +114,8 @@ def main():
         query = entry["message"]
         answer = entry["answer"]
         sources = entry.get("sources", [])
-        follow_up_questions = entry.get("follow_up_questions", [])
 
         st.write(f"**🧑‍💻 You:** {query}")
-
-        if follow_up_questions:
-            st.markdown("**💡 Follow-up Questions:**")
-            cols = st.columns(len(follow_up_questions))
-            for idx, question in enumerate(follow_up_questions):
-                button_key = f"follow_up_{idx}_{hash(question)}"
-                if cols[idx].button(question, key=button_key):
-                    st.session_state.selected_question = question
-                    st.rerun()  # Rerun to apply changes
-
         st.write(f"**🤖 Bot:** {answer}")
 
         if sources:
