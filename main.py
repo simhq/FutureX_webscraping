@@ -71,14 +71,14 @@ def main():
 
     rag_chain = create_rag_chain(vector_store)
 
-    st.title("💬 Chat with CODI about Corporate Website")
+    st.title("💬 CODI 2.0")
 
     if "chat_history" not in st.session_state:
         st.session_state["chat_history"] = []
     if "query" not in st.session_state:
         st.session_state["query"] = ""
 
-    query = st.text_input("🔍 Ask something:", key="query")
+    query = st.text_input("🔍 Ask CODI:", key="query")
 
     if query.strip():
         with st.spinner("🔎 Searching..."):
