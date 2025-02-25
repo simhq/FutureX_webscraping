@@ -57,8 +57,8 @@ def normalize_url(url):
     return urlunparse((parsed_url.scheme, parsed_url.netloc, parsed_url.path, '', '', ''))
 
 def enhance_prompt(prompt):
-    llm = ChatOpenAI(model="gpt-4o", temperature=0.7)
-    enriched_prompt = llm.predict(f"In the context of Singapore Infocomm Media Development Authority, enrich this prompt for a more effective RAG search: {prompt}. Output only the prompt.")
+    llm = ChatOpenAI(model="gpt-4o", temperature=0.6)
+    enriched_prompt = llm.predict(f"In the context of Singapore Infocomm Media Development Authority, enrich this prompt for a more effective RAG search. If the prompt is a name, the enriched prompt shall assume this person is part of the senior management, or this person is part of the management in a Group in IMDA: {prompt}. Output only the prompt.")
     return enriched_prompt
 
 def main():
@@ -71,14 +71,14 @@ def main():
 
     rag_chain = create_rag_chain(vector_store)
 
-    st.title("💬 Chat with CODI about Corporate Website")
+    st.title("💬 CODI 2.0")
 
     if "chat_history" not in st.session_state:
         st.session_state["chat_history"] = []
     if "query" not in st.session_state:
         st.session_state["query"] = ""
 
-    query = st.text_input("🔍 Ask something:", key="query")
+    query = st.text_input("🔍 Ask CODI:", key="query")
 
     if query.strip():
         with st.spinner("🔎 Searching..."):
