@@ -41,6 +41,7 @@ def create_rag_chain(_vector_store):
         "Compare the chatbot's answer against the content of retrieved documents. "
         "Do not return information that is not found in the sources. Do not hallucinate. "
         "If the answer is not found, tell the user that the answer is not found on the Corporate Website."
+        "Please do not modify the original context in the response."
     ))
     memory.chat_memory.add_message(system_message)
 
