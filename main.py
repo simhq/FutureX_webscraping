@@ -34,14 +34,13 @@ def load_vector_store():
 @st.cache_resource
 def create_rag_chain(_vector_store):
     llm = ChatOpenAI(model="gpt-4o", temperature=0.5)
-    retriever = _vector_store.as_retriever(search_kwargs={"k": 20})
+    retriever = _vector_store.as_retriever(search_kwargs={"k": 5})
     memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True, output_key="answer")
 
     system_message = SystemMessage(content=(
-        "Compare the chatbot's answer against the content of retrieved documents. "
-        "Do not return information that is not found in the sources. Do not hallucinate. "
+        "Strictly use the retrieved context verbatim. Do not generate information beyond the provided context. Do not hallucinate."
         "If the answer is not found, tell the user that the answer is not found on the Corporate Website."
-        "Please do not modify the original context in the response."
+        "Ensure consistent font usage throughout the response."
     ))
     memory.chat_memory.add_message(system_message)
 
@@ -59,7 +58,7 @@ def normalize_url(url):
 
 def enhance_prompt(prompt):
     llm = ChatOpenAI(model="gpt-4o", temperature=0.6)
-    enriched_prompt = llm.predict(f"In the context of Singapore Infocomm Media Development Authority, enrich this prompt for a more effective RAG search. If the prompt is a name, the enriched prompt shall assume this person is part of the senior management, or this person is part of the management in a Group in IMDA: {prompt}. Output only the prompt.")
+    enriched_prompt = llm.predict(f"In the context of Singapore Infocomm Media Development Authority, enrich this prompt for a more effective RAG search. If the prompt is a name, the enriched prompt shall include the possibility that this person is part of the senior management, or this person is part of the management in a Group in IMDA: {prompt}. Output only the prompt.")
     return enriched_prompt
 
 def main():
@@ -78,6 +77,11 @@ def main():
         st.session_state["chat_history"] = []
     if "query" not in st.session_state:
         st.session_state["query"] = ""
+
+    if st.button("🆕 New Query"):
+        st.session_state["chat_history"] = []
+        st.session_state["query"] = ""
+        st.rerun()
 
     query = st.text_input("🔍 Ask CODI:", key="query")
 
