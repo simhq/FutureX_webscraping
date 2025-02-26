@@ -81,6 +81,7 @@ def main():
     if st.button("🆕 New Query"):
         st.session_state["chat_history"] = []
         st.session_state["query"] = ""
+        rag_chain.memory.clear()
         st.rerun()
 
     query = st.text_input("🔍 Ask CODI:", key="query")
