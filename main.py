@@ -12,29 +12,6 @@ from urllib.parse import urlparse, urlunparse
 # Load .env file
 load_dotenv()
 
-# Custom CSS for styling
-custom_css = """
-<style>
-    .pilot-banner {
-        background-color: #fff3cd;
-        border-left: 6px solid #ffc107;
-        padding: 1rem;
-        margin-bottom: 1rem;
-    }
-    .ai-response {
-        background-color: #f8f9fa;
-        border-left: 4px solid #17a2b8;
-        padding: 1rem;
-        margin: 0.5rem 0;
-    }
-    .verification-reminder {
-        font-size: 0.9rem;
-        color: #6c757d;
-        margin-top: 0.5rem;
-    }
-</style>
-"""
-
 # Read API Key from .env or Streamlit secrets
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY") or st.secrets.get("OPENAI_API_KEY")
 
@@ -56,7 +33,7 @@ def load_vector_store():
 
 @st.cache_resource
 def create_rag_chain(_vector_store):
-    llm = ChatOpenAI(model="gpt-4o", temperature=0)
+    llm = ChatOpenAI(model="gpt-4o", temperature=0.5)
     retriever = _vector_store.as_retriever(search_kwargs={"k": 5})
     memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True, output_key="answer")
 
@@ -80,24 +57,13 @@ def normalize_url(url):
     return urlunparse((parsed_url.scheme, parsed_url.netloc, parsed_url.path, '', '', ''))
 
 def enhance_prompt(prompt):
-    llm = ChatOpenAI(model="gpt-4o", temperature=0.5)
+    llm = ChatOpenAI(model="gpt-4o", temperature=0.6)
     enriched_prompt = llm.predict(f"In the context of Singapore Infocomm Media Development Authority, enrich this prompt for a more effective RAG search. If the prompt is a name, the enriched prompt shall include the possibility that this person is part of the senior management, or this person is part of the management in a Group in IMDA: {prompt}. Output only the prompt.")
     return enriched_prompt
 
 def main():
     st.set_page_config(page_title="💬 Ask CODI 2.0", layout="wide")
-    
-    # Inject custom CSS
-    st.markdown(custom_css, unsafe_allow_html=True)
 
-    # Add pilot warning banner
-    st.markdown("""
-        <div class="pilot-banner">
-            <h3>🔬 PILOT SYSTEM</h3>
-            <p>This is a pilot system using Large Language Models (LLMs). All responses are AI-generated and may contain errors. Always verify important information with official sources. Use specific, clear questions for better results.</p>
-        </div>
-    """, unsafe_allow_html=True)
-       
     vector_store = load_vector_store()
     if not vector_store:
         st.warning("⚠️ No vector store found. Please ensure it is prepared before running the app!")
@@ -105,27 +71,20 @@ def main():
 
     rag_chain = create_rag_chain(vector_store)
 
-    st.title("💬 Ask CODI 2.0")
+    st.title("💬 CODI 2.0")
 
     if "chat_history" not in st.session_state:
         st.session_state["chat_history"] = []
     if "query" not in st.session_state:
         st.session_state["query"] = ""
 
-    col1, col2 = st.columns([6, 1])
-    with col1:
-        query = st.text_input(
-            "🔍 Ask CODI:", 
-            key="query",
-            help="Enter your question. Remember to verify any critical information.",
-            placeholder="Type your question here..."
-        )
-    with col2:
-        if st.button("🆕 New Query"):
-            st.session_state["chat_history"] = []
-            st.session_state["query"] = ""
-            rag_chain.memory.clear()
-            st.rerun()
+    if st.button("🆕 New Query"):
+        st.session_state["chat_history"] = []
+        st.session_state["query"] = ""
+        rag_chain.memory.clear()
+        st.rerun()
+
+    query = st.text_input("🔍 Ask CODI:", key="query")
 
     if query.strip():
         with st.spinner("🔎 Searching..."):
@@ -163,20 +122,9 @@ def main():
         sources = entry.get("sources", [])
 
         st.write(f"**🧑‍💻 You:** {query}")
-        
-        # AI response container with verification reminder
-        st.markdown("""
-            <div class="ai-response">
-                <strong>🤖 AI Response:</strong><br>
-                {answer}
-                <div class="verification-reminder">
-                    ⚠️ This is an AI-generated response. Please verify critical information.
-                </div>
-            </div>
-        """.format(answer=answer), unsafe_allow_html=True)
+        st.write(f"**🤖 Bot:** {answer}")
 
         if sources:
-            st.markdown("**📚 Verification Sources:**")
             unique_sources = set()
             displayed_sources = 0
             for doc in sources:
@@ -189,16 +137,9 @@ def main():
                     if displayed_sources == 5:
                         break
         else:
-            st.warning("_No sources found for this response. Extra verification is recommended._")
+            st.write("_No sources found for this response._")
 
         st.markdown("---")
-
-    # Footer with additional reminders
-    st.markdown("""
-        <div style='position: fixed; bottom: 0; left: 0; right: 0; background-color: #f8f9fa; padding: 10px; text-align: center; font-size: 0.8rem;'>
-            🔍 Remember: Always verify AI-generated responses against official sources
-        </div>
-    """, unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
