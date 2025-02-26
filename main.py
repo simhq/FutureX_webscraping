@@ -66,7 +66,7 @@ def main():
 
     st.markdown("""
         🔬 Proof-of-Concept (POC):
-         This is an experimental AI-powered assistant currently in POC phase. All responses are AI-generated and may contain errors. Always verify information with official sources
+         This is an experimental AI-powered assistant currently in POC phase. All responses are AI-generated and may contain errors. Always verify information with official sources.
          """)
 
     vector_store = load_vector_store()
