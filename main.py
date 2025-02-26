@@ -97,18 +97,7 @@ def main():
             <p>This is a pilot system using Large Language Models (LLMs). All responses are AI-generated and may contain errors. Always verify important information with official sources. Use specific, clear questions for better results.</p>
         </div>
     """, unsafe_allow_html=True)
-
-    # Add informational sidebar
-    with st.sidebar:
-        st.header("ℹ️ About CODI 2.0")
-        st.markdown("""
-        **Important Information:**
-        - This is a pilot system using Large Language Models (LLMs)
-        - All responses are AI-generated and may contain errors
-        - Always verify important information with official sources
-        - Use specific, clear questions for better results
-         """)
-        
+       
     vector_store = load_vector_store()
     if not vector_store:
         st.warning("⚠️ No vector store found. Please ensure it is prepared before running the app!")
