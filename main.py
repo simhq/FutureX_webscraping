@@ -64,6 +64,12 @@ def enhance_prompt(prompt):
 def main():
     st.set_page_config(page_title="💬 Ask CODI 2.0", layout="wide")
 
+    st.markdown("""
+        🔬 PILOT SYSTEM
+         This is an experimental AI-powered assistant currently in pilot phase. 
+         Responses may not be fully accurate or complete.
+         """)
+
     vector_store = load_vector_store()
     if not vector_store:
         st.warning("⚠️ No vector store found. Please ensure it is prepared before running the app!")
