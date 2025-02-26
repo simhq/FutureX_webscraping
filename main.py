@@ -65,8 +65,8 @@ def main():
     st.set_page_config(page_title="💬 Ask CODI 2.0", layout="wide")
 
     st.markdown("""
-        🔬 PILOT SYSTEM:
-         This is an experimental AI-powered assistant currently in pilot phase. All responses are AI-generated and may contain errors. Always verify important information with official sources
+        🔬 Proof-of-Concept (POC):
+         This is an experimental AI-powered assistant currently in POC phase. All responses are AI-generated and may contain errors. Always verify important information with official sources
          """)
 
     vector_store = load_vector_store()
