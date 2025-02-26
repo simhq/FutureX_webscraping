@@ -58,10 +58,7 @@ def normalize_url(url):
 
 def enhance_prompt(prompt):
     llm = ChatOpenAI(model="gpt-4o", temperature=0.5)
-    enriched_prompt = llm.predict(f"In the context of Singapore Infocomm Media Development Authority, enrich this prompt for a more effective RAG search. "
-    "If the prompt appears to be a name, the enriched prompt expand the search to include the possibility that this person is part of the senior management,"
-    "or this person is part of the management in a Group in IMDA, otherwise keep the original prompt as it is. This is the original prompt: {prompt}."
-    "Output only the enriched prompt.")
+    enriched_prompt = llm.predict(f"In the context of Singapore Infocomm Media Development Authority, enrich this prompt for a more effective RAG search. If the prompt appears to be a name, the enriched prompt expand the search to include the possibility that this person is part of the senior management, or this person is part of the management in a Group in IMDA, otherwise keep the original prompt as it is: {prompt}. Output only the prompt.")
     return enriched_prompt
 
 def main():
