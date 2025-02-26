@@ -56,7 +56,7 @@ def load_vector_store():
 
 @st.cache_resource
 def create_rag_chain(_vector_store):
-    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+    llm = ChatOpenAI(model="gpt-4o", temperature=0)
     retriever = _vector_store.as_retriever(search_kwargs={"k": 5})
     memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True, output_key="answer")
 
@@ -80,7 +80,7 @@ def normalize_url(url):
     return urlunparse((parsed_url.scheme, parsed_url.netloc, parsed_url.path, '', '', ''))
 
 def enhance_prompt(prompt):
-    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.5)
+    llm = ChatOpenAI(model="gpt-4o", temperature=0.5)
     enriched_prompt = llm.predict(f"In the context of Singapore Infocomm Media Development Authority, enrich this prompt for a more effective RAG search. If the prompt is a name, the enriched prompt shall include the possibility that this person is part of the senior management, or this person is part of the management in a Group in IMDA: {prompt}. Output only the prompt.")
     return enriched_prompt
 
