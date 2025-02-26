@@ -106,9 +106,6 @@ def main():
     rag_chain = create_rag_chain(vector_store)
 
     st.title("💬 Ask CODI 2.0")
-    
-    # Add AI-generated content disclaimer
-    st.caption("All responses are AI-generated and should be verified against official sources")
 
     if "chat_history" not in st.session_state:
         st.session_state["chat_history"] = []
