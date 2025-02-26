@@ -56,7 +56,7 @@ def load_vector_store():
 
 @st.cache_resource
 def create_rag_chain(_vector_store):
-    llm = ChatOpenAI(model="gpt-4", temperature=0)
+    llm = ChatOpenAI(model="gpt-4-mini", temperature=0)
     retriever = _vector_store.as_retriever(search_kwargs={"k": 5})
     memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True, output_key="answer")
 
@@ -107,24 +107,9 @@ def main():
         - This is a pilot system using Large Language Models (LLMs)
         - All responses are AI-generated and may contain errors
         - Always verify important information with official sources
-        """)
+        - Use specific, clear questions for better results
+         """)
         
-        st.divider()
-        
-        st.markdown("**Best Practices:**")
-        st.markdown("""
-        1. Cross-reference responses with official documentation
-        2. Use specific, clear questions for better results
-        3. Report unexpected or incorrect responses
-        """)
-        
-        st.divider()
-        
-        st.markdown("**Feedback**")
-        st.markdown("Help us improve by reporting issues or suggesting improvements.")
-        if st.button("📝 Submit Feedback"):
-            st.markdown("Please contact your system administrator to submit feedback.")
-
     vector_store = load_vector_store()
     if not vector_store:
         st.warning("⚠️ No vector store found. Please ensure it is prepared before running the app!")
@@ -151,7 +136,7 @@ def main():
             placeholder="Type your question here..."
         )
     with col2:
-        if st.button("🆕 New Chat"):
+        if st.button("🆕 New Query"):
             st.session_state["chat_history"] = []
             st.session_state["query"] = ""
             rag_chain.memory.clear()
