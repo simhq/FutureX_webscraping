@@ -94,8 +94,7 @@ def main():
     st.markdown("""
         <div class="pilot-banner">
             <h3>🔬 PILOT SYSTEM</h3>
-            <p>This is an experimental AI-powered assistant currently in pilot phase. 
-            Responses may not be fully accurate or complete.</p>
+            <p>This is a pilot system using Large Language Models (LLMs). All responses are AI-generated and may contain errors. Always verify important information with official sources. Use specific, clear questions for better results.</p>
         </div>
     """, unsafe_allow_html=True)
 
